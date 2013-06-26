@@ -1,0 +1,695 @@
+;; Hello Emacs, this is -*-Emacs-Lisp-*-.
+;; .emacs configuration and customization file
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;;
+;; Pre-autoload setup
+;;
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
+(setq sdb-pgsource (expand-file-name "~/SayonaraDB/postgres"))
+(setq sdb-pgdeploy (expand-file-name "~/SayonaraDB/deploy"))
+(setq sdb-pgdata (expand-file-name "~/SayonaraDB/data"))
+
+(setenv "PGDATA" (concat sdb-pgdata "/1"))
+(setenv "PGDATABASE" "postgres")
+(setenv "PGUSER" user-login-name)
+(setenv "PGPORT" "5432")
+(setenv "PGLOCALEDIR" (concat sdb-pgdeploy "/share/locale"))
+
+(setenv "PATH" (concat sdb-pgdeploy "/bin" ":" (getenv "PATH")))
+(setenv (if (eq system-type 'darwin)
+	    "DYLD_LIBRARY_PATH"
+	  "LD_LIBRARY_PATH")
+	(concat sdb-pgdeploy "/lib" ":" (getenv "LD_LIBRARY_PATH")))
+
+(setenv "PAGER" "cat")
+(setenv "GIT_PAGER" "cat")
+
+(add-to-list 'load-path (expand-file-name "~/elisp"))
+(add-to-list 'load-path (expand-file-name "~/elisp/themes"))
+(add-to-list 'load-path (expand-file-name "~/elisp/org-7.01h/lisp"))
+(add-to-list 'load-path (expand-file-name "~/elisp/org-7.01h/contrib/lisp"))
+(add-to-list 'load-path (expand-file-name "~/elisp/vm-8.1.93a/lisp"))
+(add-to-list 'load-path (expand-file-name "~/elisp/auto-complete-1.3.1"))
+
+(add-to-list 'Info-default-directory-list (expand-file-name "~/elisp/info"))
+(add-to-list 'Info-default-directory-list (expand-file-name "~/elisp/vm-8.1.93a/info"))
+
+(add-to-list 'exec-path (expand-file-name "~/local/bin"))
+(add-to-list 'exec-path (expand-file-name "/usr/local/bin"))
+(add-to-list 'exec-path (expand-file-name "/opt/local/bin"))
+
+(set-cursor-color "red")
+(if window-system
+    (split-window-horizontally)
+  ())
+
+(print "Loading .emacs file")
+
+;; Some org-mode keymap tweaks that need to be set up before org.el is loaded
+(setq org-replace-disputed-keys t)
+(setq org-disputed-keys (quote (([(meta left)] . [(control meta shift left)])
+				([(meta right)] . [(control meta shift right)])
+				([(meta up)] . [(control meta shift up)])
+				([(meta down)] . [(control meta shift down)]))))
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;;
+;; Loading stuff or telling Emacs how to autoload things.
+;;
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
+;; (autoload 'ruby-mode "ruby-mode" "Emacs major mode for Ruby." t)
+;; (autoload 'nxml-mode "nxml-mode" "James Clark's new XML mode." t)
+;; (autoload 'ansi-color-for-comint-mode-on "ansi-color" "Using colors in Shell Mode." t)
+;; (autoload 'vm "vm" "Start VM on your primary inbox." t)
+;; (autoload 'vm-other-frame "vm" "Like `vm' but starts in another frame." t)
+;; (autoload 'vm-visit-folder "vm" "Start VM on an arbitrary folder." t)
+;; (autoload 'vm-visit-virtual-folder "vm" "Visit a VM virtual folder." t)
+;; (autoload 'vm-mode "vm" "Run VM major mode on a buffer" t)
+;; (autoload 'vm-mail "vm" "Send a mail message using VM." t)
+;; (autoload 'vm-submit-bug-report "vm" "Send a bug report about VM." t)
+;; (autoload 'smtpmail-send-it "smtpmail" "Send mail through SMTP server.")
+;; (autoload 'smtpmail-send-queued-mail "smtpmail" "Send queued mail through SMTP server.")
+;; (autoload 'sgml-mode "psgml" "Major mode to edit SGML files." t)
+;; (autoload 'xml-mode "psgml" "Major mode to edit XML files." t)
+(autoload 'gnuplot-mode "gnuplot" "gnuplot major mode" t)
+(autoload 'gnuplot-make-buffer "gnuplot" "open a buffer in gnuplot mode" t)
+
+(require 'help-mode)
+(require 'auto-complete-config)
+(require 'cal-x)
+(require 'color-theme)
+(require 'cua-rect)
+(require 'ido)
+(require 'multi-term)
+(require 'nxml-mode)
+(require 'org)
+(require 'org-install)
+(require 'tramp)
+;(require 'vm-autoloads)
+(require 'whitespace)
+(require 'windmove)
+(require 'xcscope)
+(add-hook 'diary-display-hook 'fancy-diary-display)
+(windmove-default-keybindings 'meta)
+
+;; Finish setup of auto-complete mode
+(add-to-list 'ac-dictionary-directories (expand-file-name "~/elisp/auto-complete-1.3.1/ac-dict"))
+(ac-config-default)
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;;
+;; Some useful little functions.
+;;
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
+(defun paren-match ()
+  "Tries to jump to the matching parenthesis to the one currently
+under the point. Useful if the matching paren is out of sight. "
+  (interactive)
+  (cond ((looking-at "[{\[\(]") (forward-sexp 1) (backward-char))
+	((looking-at "[]})]") (forward-char) (backward-sexp 1))
+	(t (message "Point not at a parenthesis."))))
+(defun other-window-rev () (interactive) (other-window -1))
+
+(defun scroll-up-line () (interactive) (scroll-up 1))
+(defun scroll-down-line () (interactive) (scroll-down 1))
+(defun scroll-left-col () (interactive) (scroll-left 1))
+(defun scroll-right-col () (interactive) (scroll-right 1))
+
+; (defun page-down () (interactive) (goto-line (- (+ (count-lines 1 (point)) (window-height)) 1)))
+; (defun page-up () (interactive) (goto-line (+ (- (count-lines 1 (point)) (window-height)) 1)))
+
+(defun latex-insert-a-uml () (interactive) (insert "\"a"))
+(defun latex-insert-big-a-uml () (interactive) (insert "\"A"))
+(defun latex-insert-o-uml () (interactive) (insert "\"o"))
+(defun latex-insert-big-o-uml () (interactive) (insert "\"O"))
+(defun latex-insert-u-uml () (interactive) (insert "\"u"))
+(defun latex-insert-big-u-uml () (interactive) (insert "\"U"))
+(defun latex-insert-s-uml () (interactive) (insert "\"s"))
+
+(defun html-insert-a-uml () (interactive) (insert "&amp;auml;"))
+(defun html-insert-big-a-uml () (interactive) (insert "&amp;Auml;"))
+(defun html-insert-o-uml () (interactive) (insert "&amp;ouml;"))
+(defun html-insert-big-o-uml () (interactive) (insert "&amp;Ouml;"))
+(defun html-insert-u-uml () (interactive) (insert "&amp;uuml;"))
+(defun html-insert-big-u-uml () (interactive) (insert "&amp;Uuml;"))
+(defun html-insert-s-uml () (interactive) (insert "&amp;szlig;"))
+
+(defun shell-magic-space () (interactive) (comint-magic-key (kbd "SPC")))
+
+;;
+;; Allow Emacs to randomly shuffle lines for you.  Very useful for writing testcases... :-)
+;;
+(defun shuffle-lines (beg end)
+  "Scramble all the lines in region defined by BEG END. If region
+contains less than 2 lines, lines are left untouched."
+  (interactive "*r")
+  (catch 'cancel
+    (save-restriction
+      (narrow-to-region beg end)
+      ;; Exit when there is not enough lines in region
+      (if (< (- (point-max) (point-min)) 3)
+	  (throw 'cancel t))
+      
+      ;; Prefix lines with a random number and a space
+      (goto-char (point-min))
+      (while (not (eobp))
+	(insert (int-to-string (random 32000)) " ")
+	(forward-line 1))
+
+      ;; Sort lines according to first field (random number)
+      (sort-numeric-fields 1 (point-min) (point-max))
+      
+      (goto-char (point-min))  ;; Remove the prefix fields
+      (while (not (eobp))
+	(delete-region (point) (progn (forward-word 1) (+ (point) 1)))
+	(forward-line 1))
+      )))
+
+;;
+;; Let Emacs generate a series of numbers.  Also very useful for writing testcases...
+;;
+(defun keygen (number-of-rows)
+  "Generate a series of numbers, starting from 1 up to
+   number-of-rows, each printed on a new line in a buffer by the
+   name *result*."
+  (interactive "p")
+  (let ((row-number 1))
+    (setq result-buffer (switch-to-buffer (get-buffer-create "*result*")))
+    (while (<= row-number number-of-rows)
+      (prin1 row-number result-buffer)
+      (newline)
+      (setq row-number (1+ row-number)))
+    (1- row-number)))
+
+(defun comint-magic-key (key)
+  "Useful function that is meant to be bound to SPC (or any other
+   key for that matter) in comint mode.  It kills any open
+   *Completions* buffer before inserting the character at the
+   point."
+  (if (get-buffer "*Completions*")
+      (kill-buffer "*Completions*"))
+  (insert key))
+
+(defun comint-kill-completions (input)
+  "Useful function that is meant to be called from the hook
+   comint-input-filter-functions.  It kills any open
+   *Completions* buffer."
+  (interactive s)
+  (if (get-buffer "*Completions*")
+      (kill-buffer "*Completions*")))
+
+;;
+;; XML pretty-printing via nxml
+;;
+(defun nxml-pretty-print-xml-region (begin end)
+  "Pretty format XML markup in region.  The function inserts
+   linebreaks between separate tags that have nothing but
+   whitespace between them.  It then indents the markup by using
+   nxml-mode's indentation rules.  Why isn't that in nxml-mode in
+   the first place?"
+  (interactive "r")
+  (save-excursion
+    (nxml-mode)
+    (goto-char begin)
+    (while (search-forward-regexp "\>[ \\t]*\<" nil t)
+      (backward-char) (insert "\n"))
+    (indent-region begin end))
+  (message "Pretty-printing complete."))
+
+;;
+;; Let emacs build a gdb command line for the backend postgres process
+;;
+(defun thf-debug-postgres ()
+  (interactive)
+  (let ((gdb-command-string (thf-build-pg-debug-command)))
+    (if gdb-command-string
+	(if (eq system-type 'darwin)
+	    (progn
+	      (message (concat "Calling gud-gdb with: " gdb-command-string))
+	      (gud-gdb gdb-command-string))
+	  (progn
+	    (message (concat "Calling gdb with: " gdb-command-string))
+	    (gdb gdb-command-string))))))
+
+(defun thf-build-pg-debug-command ()
+  (let*
+      ((gdb-command (if (eq system-type 'darwin)
+			(concat "gdb --fullname " sdb-pgdeploy "/bin/postgres ")
+		       (concat "gdb -i=mi " sdb-pgdeploy "/bin/postgres ")))
+       (cmd-string "ps -fea | egrep \"postgres.*local\" | egrep -v egrep | awk '{ print $2 }'")
+       (cmd-output (split-string (shell-command-to-string cmd-string))))
+    (cond ((= (list-length cmd-output) 1)          ;; If there's a single backend process,
+	   (concat gdb-command (car cmd-output)))  ;; return the PID as a string.
+	  ((> (list-length cmd-output) 1)          ;; If there are multiple backend processes,
+	   (message                                ;; write a message
+	    (concat "Multiple postgres backends running ["
+		    (mapconcat 'identity cmd-output ", ")
+		    "]"))
+	   nil)                                    ;; and return nil.
+	  (t                                       ;; In all other cases,
+	   (message "No postgres backend running") ;; assume there is no running backend
+	   nil))))                                 ;; and return nil.
+
+;;
+;; Tweak appearance on OS X
+;;
+(defun thf-setup-frame ()
+  (interactive)
+  (set-frame-size (selected-frame) 420 99)
+  (set-frame-position (selected-frame) 0 0))
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;;
+;; Some less useful or entirely useless functions...  Or in other words: Some
+;; solutions looking for a problem.
+;;
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
+(defun thf-opacity-modify (&optional less)
+  "Change the transparency of the emacs frame (works in Windows
+   and some X Window managers).  If LESS is t, decrease the
+   transparency by 5%, otherwise increase it by 5%"
+  (let* ((alpha (frame-parameter nil 'alpha))
+          (oldalpha (if alpha alpha 100))
+          (newalpha (if less (- oldalpha 5) (+ oldalpha 5))))
+    (when (and (>= newalpha frame-alpha-lower-limit) (<= newalpha 100))
+      (modify-frame-parameters nil (list (cons 'alpha newalpha))))))
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;;
+;; Globally customized key bindings.
+;;
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
+(global-set-key "\C-m" 'newline-and-indent) ; Always indent on new lines.
+(global-set-key [home] 'beginning-of-buffer) ; Set traditional Emacs behavior for END and HOME.
+(global-set-key [end] 'end-of-buffer)
+(global-set-key (kbd "C-S-s") 'isearch-forward-regexp)
+(global-set-key [delete] 'delete-char) ; Set DEL key to behave PC-like.
+(global-set-key [kp-delete] 'delete-char) ; Set keypad DEL key to behave like DEL.
+(global-set-key [C-backspace] 'backward-kill-word)
+(global-set-key [C-delete] 'kill-word)
+(global-set-key [S-up] 'scroll-down-line) ; One-line-per-time scroll mode.
+(global-set-key [S-down] 'scroll-up-line)
+(global-set-key [S-right] 'scroll-left-col)
+(global-set-key [S-left] 'scroll-right-col)
+(global-set-key "\C-x\C-p" 'paren-match) ; More comprehensive paren-match.
+(global-set-key "\C-x\C-l" 'goto-line) ; Goto line specified by number.
+(global-set-key "\C-x\w" 'what-line) ; Print line information in the minibuffer
+(global-set-key "\C-x\C-r" 'toggle-read-only) ; Switch read-write and read-only modes.
+(global-set-key "\C-x\p" 'other-window-rev) ; Cycle through windows in reverse order.
+(global-set-key (kbd "C-c C-t") 'toggle-truncate-lines)
+(global-set-key [mouse-3] 'mouse-yank-at-click)
+(global-set-key (kbd "M-R") 'eval-region)
+(global-set-key (kbd "C-8") '(lambda()(interactive)(thf-opacity-modify)))
+(global-set-key (kbd "C-9") '(lambda()(interactive)(thf-opacity-modify t)))
+(global-set-key (kbd "C-0") '(lambda()(interactive)
+                               (modify-frame-parameters nil `((alpha . 100)))))
+(global-set-key (kbd "C-x C-b") 'ibuffer)
+(global-set-key (kbd "M-SPC") 'cua-set-rectangle-mark)
+
+(global-set-key "\C-cl" 'org-store-link)
+(global-set-key "\C-ca" 'org-agenda)
+(global-set-key "\C-cb" 'org-iswitchb)
+
+(global-set-key (kbd "<f1>") 'multi-term)
+(global-set-key (kbd "<C-next>") 'multi-term-next)
+(global-set-key (kbd "<C-prior>") 'multi-term-prev)
+
+(global-set-key (kbd "<f13>") 'gud-step)
+(global-set-key (kbd "<f14>") 'gud-next)
+(global-set-key (kbd "<f15>") 'gud-finish)
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;;
+;; Setting some variables and faces, doing other common customization.
+;;
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
+(custom-set-variables
+ ;; custom-set-variables was added by Custom.
+ ;; If you edit it by hand, you could mess it up, so be careful.
+ ;; Your init file should contain only one such instance.
+ ;; If there is more than one, they won't work right.
+ '(auto-save-interval 3000)
+ '(auto-save-timeout nil)
+ '(blink-cursor-mode nil)
+ '(buffer-always-show-last-buffer nil)
+ '(buffer-shrink-to-minimum-size t)
+ '(buffer-sorting-mode (quote recency))
+ '(buffer-use-header-line t)
+ '(calendar-setup (quote calendar-only))
+ '(column-number-mode "C%c--")
+ '(comint-input-ignoredups t)
+ '(comint-process-echoes t)
+ '(comint-scroll-to-bottom-on-input (quote this))
+ '(cua-enable-cua-keys nil)
+ '(cua-enable-cursor-indications t)
+ '(cua-mode t nil (cua-base))
+ '(cua-normal-cursor-color "red")
+ '(cua-overwrite-cursor-color "yellow")
+ '(cua-read-only-cursor-color "green")
+ '(default-frame-alist (quote ((top . 20)
+			       (left . 0)
+			       (width . 234)
+			       (height . 60)
+			       (mouse-color . "red")
+			       (cursor-color . "red"))))
+ '(default-truncate-lines t t)
+ '(display-buffer-reuse-frames t)
+ '(ediff-auto-refine-limit 5000)
+ '(ediff-control-frame-upward-shift 0)
+ '(ediff-grab-mouse nil)
+ '(ediff-merge-split-window-function (quote split-window-vertically))
+ '(ediff-narrow-control-frame-leftward-shift 40)
+ '(ediff-split-window-function (quote split-window-horizontally))
+ '(ediff-use-long-help-message nil)
+ '(ediff-wide-control-frame-rightward-shift 150)
+ '(ediff-window-setup-function (quote ediff-setup-windows-multiframe))
+ '(explicit-sh-args (quote ("-login" "-i")))
+ '(explicit-shell-file-name "bash")
+ '(fill-column 80)
+ '(find-file-visit-truename t)
+ '(font-lock-maximum-decoration t)
+ '(gdb-many-windows nil)
+ '(ibuffer-restore-window-config-on-quit nil)
+ '(ido-case-fold t)
+ '(ido-confirm-unique-completion t)
+ '(ido-enable-flex-matching t)
+ '(ido-ignore-buffers (quote ("\\` " "^*Mess" "^*Back" ".*Completion" "^*Ido")))
+ '(ido-max-prospects 6)
+ '(ido-max-directory-size 100000)
+ '(ido-mode t nil (ido))
+ '(ido-use-filename-at-point nil)
+ '(ido-use-url-at-point nil)
+ '(initial-buffer-choice nil)
+ '(initial-scratch-message nil)
+ '(mac-command-modifier 'meta)
+ '(mac-option-modifier 'super)
+ '(mail-citation-prefix-regexp "[ 	]*[-a-z0-9A-Z]*[|> ]+[ 	]*\\|[ 	]*")
+ '(mail-default-headers "From: Thomas Fanghaenel <thomas.fanghaenel@gmail.com>")
+ '(mail-default-reply-to "thomas.fanghaenel@gmail.com")
+ '(mail-from-style "angles")
+ '(mail-specify-envelope-from t)
+ '(menu-bar-mode nil)
+ '(mouse-wheel-scroll-amount (quote (1)))
+ '(mouse-yank-at-point t)
+ '(next-line-add-newlines nil)
+ '(org-agenda-files (quote ("~/test.org")))
+ '(org-completion-use-ido t)
+ '(org-log-done (quote time))
+ '(org-special-ctrl-a/e t)
+ '(org-src-window-setup (quote current-window))
+ '(org-startup-indented t)
+ '(org-todo-keyword-faces (quote (("TODO" :foreground "red" :weight bold) ("STARTED" :foreground "yellow" :weight bold) ("DONE" :foreground "forest green" :weight bold) ("WAITING" :foreground "LightSteelBlue" :weight bold) ("MAYBE" :foreground "goldenrod" :weight bold) ("CANCELLED" :foreground "orangered" :weight bold) ("OPEN" :foreground "magenta" :weight bold) ("CLOSED" :foreground "forest green" :weight bold))))
+ '(org-todo-keywords (quote ((sequence "TODO(t)" "STARTED(n)" "|" "DONE(d!/!)") (sequence "WAITING(w@/!)" "MAYBE(s!)" "|" "CANCELLED(c@/!)") (sequence "OPEN(O)" "|" "CLOSED(C)"))))
+ '(org-treat-S-cursor-todo-selection-as-state-change nil)
+ '(org-use-fast-todo-selection t)
+ '(pop-up-windows nil)
+ '(ps-left-footer (quote (ps-time-stamp-mon-dd-yyyy)))
+ '(ps-left-header (quote (ps-get-buffer-name ps-header-dirpart)))
+ '(ps-lpr-command "C:/Program Files/GhostScript/GSView/gsview/gsview32.exe")
+ '(ps-lpr-switches (quote ("query")))
+ '(ps-print-footer t)
+ '(ps-print-header t)
+ '(ps-printer-name t)
+ '(ps-right-footer (quote (ps-time-stamp-hh:mm:ss)))
+ '(ps-right-header (quote ("/pagenumberstring load")))
+ '(require-final-newline t)
+ '(revert-without-query (quote (".")))
+ '(ring-bell-function 'ignore)
+ '(scroll-conservatively 0)
+ '(scroll-margin 0)
+ '(scroll-preserve-screen-position 1)
+ '(search-highlight t)
+ '(send-mail-function (quote smtpmail-send-it))
+ '(shell-command-switch "-c" t)
+ '(shell-file-name "bash")
+ '(show-paren-delay 0)
+ '(show-paren-mode t)
+ '(show-paren-style (quote parenthesis))
+ '(smtpmail-default-smtp-server "smtp.web.de")
+ '(smtpmail-local-domain nil)
+ '(smtpmail-queue-dir "~/MAIL/OUTGOING/")
+ '(smtpmail-queue-mail t)
+ '(ssl-program-name "gnutls-cli")
+ '(ssl-program-arguments '("--insecure" "-p" service host))
+ '(ssl-certificate-verification-policy 1)
+ '(term-default-bg-color "#000000")
+ '(term-default-fg-color "#CCCCCC")
+ '(tool-bar-mode nil)
+ '(tramp-default-method "scp")
+ '(transient-mark-mode t)
+ '(truncate-lines t)
+ '(truncate-partial-width-windows t)
+ '(user-full-name "Thomas Fanghaenel")
+ '(user-mail-address "thomas.fanghaenel@web.de")
+ '(w32-quote-process-args 34 t)
+ '(which-func-mode-global t nil (which-func))
+ '(windmove-wrap-around t)
+ '(x-select-enable-clipboard t)
+)
+
+(add-to-list 'term-bind-key-alist (quote ("C-c C-j" . term-line-mode)))
+(add-to-list 'term-bind-key-alist (quote ("C-c C-k" . term-char-mode)))
+(add-to-list 'term-bind-key-alist (quote ("\t" . term-send-raw)))
+
+(custom-set-faces
+ (if (eq system-type 'darwin)
+     '(default ((t (:inherit nil :stipple nil :background "gray12" :foreground "Wheat" :inverse-video nil :box nil :strike-through nil :overline nil :underline nil :slant normal :weight normal :height 130 :width normal :foundry "apple" :family "Fixed"))))
+   '(default ((t (:inherit nil :stipple nil :background "gray16" :foreground "Wheat" :inverse-video nil :box nil :strike-through nil :overline nil :underline nil :slant normal :weight medium :height 98 :width semicondensed :foundry "misc" :family "fixed")))))
+ '(compilation-info ((((class color) (min-colors 88) (background dark)) (:foreground "Green1"))))
+ '(compilation-warning ((((class color) (min-colors 16)) (:foreground "Orange"))))
+ '(cua-rectangle ((t (:inherit region))))
+ '(font-lock-warning-face ((((class color) (min-colors 88) (background dark)) (:foreground "red"))))
+ '(minibuffer-noticeable-prompt ((((class color) (min-colors 88) (background dark)) nil)))
+ '(nxml-comment-content-face ((t (:foreground "chocolate1"))))
+ '(nxml-comment-delimiter-face ((t (:foreground "chocolate1"))))
+ '(term ((t (:foreground "white"))))
+ )
+
+(set-face-attribute 'whitespace-line nil     :background "dark red" :foreground "yellow")
+(set-face-attribute 'whitespace-tab nil      :background "dark red" :foreground "yellow")
+(set-face-attribute 'whitespace-trailing nil :background "dark red" :foreground "yellow")
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;;
+;; Major mode hooks for customizing certain modes.
+;;
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
+(defun thf-c-mode-common-hook ()
+  (make-local-variable 'whitespace-line-column) ; Variables for buffer-local whitespace policy
+  (make-local-variable 'whitespace-style)
+  (c-add-style "pgsql" '("bsd" ; Postgres coding style, mostly based on BSD style, with a few exceptions
+			 (c-basic-offset . 4) ; One level of indentation is 4 spaces
+			 (c-tab-always-indent . t)
+			 (fill-column . 79) ; This is what pgindent uses
+			 (indent-tabs-mode . t) ; Postgres uses tabs to indent
+			 (tab-width . 4) ; Tab width is 4
+ 			 (whitespace-line-column . 79) ; This is for highlighting lines that are too long
+ 			 (whitespace-style . (face trailing lines-tail)))) ; Highlight inappropriate whitespace
+  (c-add-style "db2" '("thf" (c-basic-offset . 2)))
+  (c-add-style "thf" '("stroustrup" ; Defining own customized C style, based on "K&R".
+		       (indent-tabs-mode . nil) ; Use no TAB characters for indentation.
+		       (c-tab-always-indent . t) ; Align whole line when pressing TAB.
+		       (whitespace-line-column . 80) ; Highlight lines longer than 80 characters
+		       (whitespace-style . (face tabs trailing lines-tail)))) ; Highlight various bad whitespace characters
+  (if (string-match "\\(postgres\\|pgsql\\).*\\.[chy]\\'" buffer-file-name)
+      (progn
+	(c-set-style "pgsql") ; For Postgres source code, use their own coding style
+	(c-set-offset 'case-label '+)) ; Fix up the placement of case labels to match Postgres style
+    (c-set-style "thf")) ; For everything else, use the prefered style
+  (auto-revert-mode t) ; Automatically reloading buffers when changed on disk.
+  (c-toggle-hungry-state t) ; Delete as many whitechars as possible on BACKSPACE.
+  (font-lock-add-keywords 'c++-mode '(("\\<\\(FIXME\\):" 1 font-lock-warning-face t)))
+  (font-lock-add-keywords 'c++-mode '(("\\<\\(TODO\\):" 1 font-lock-warning-face t)))
+  (font-lock-add-keywords 'c++-mode '(("\\<\\(PROBLEM\\):" 1 font-lock-warning-face t)))
+  (turn-on-font-lock)
+  (whitespace-mode t)
+)
+
+(defun thf-java-mode-hook ()
+  (turn-on-font-lock))
+
+(defun thf-shell-mode-hook ()
+  (ansi-color-for-comint-mode-on) ; Activating interpretation of terminal color codes.
+  (define-key shell-mode-map (kbd "SPC") 'shell-magic-space)
+  ;; This little loop automatically numbers shell buffers when they are created,
+  ;; so I can have multiple buffers, and "M-x shell" will always open a new one.
+  (if (string-match "\\*shell\\*" (buffer-name))
+      (let ((counter 1)
+	    (shell-buffer-name nil))
+	(while (progn (setq shell-buffer-name (format "*shell %d*" counter))
+		      (get-buffer shell-buffer-name))
+	  (incf counter))
+	(rename-buffer shell-buffer-name))))
+  
+(defun thf-emacs-lisp-mode-hook ()
+  (turn-on-font-lock))
+
+(defun thf-dired-mode-hook ()
+  (turn-on-font-lock))
+
+;; Make line mode the default for new terminals in multi-term
+(defadvice multi-term (after advice-term-line-mode activate)
+  (term-line-mode))
+
+;; Make line mode the default for new terminals in ansi-term
+(defadvice ansi-term (after advice-term-line-mode activate)
+  (term-line-mode))
+
+;;; Enable cua and transient mark modes in term-line-mode
+;(defadvice term-line-mode (after term-line-mode-fixes ())
+;  (set (make-local-variable 'cua-mode) t)
+;  (set (make-local-variable 'transient-mark-mode) t))
+;(ad-activate 'term-line-mode)
+; 
+;;; Disable cua and transient mark modes in term-char-mode
+;(defadvice term-char-mode (after term-char-mode-fixes ())
+;  (set (make-local-variable 'cua-mode) nil)
+;  (set (make-local-variable 'transient-mark-mode) nil))
+;(ad-activate 'term-char-mode)
+
+;; (defadvice tex-kill-job (after thf-tex-kill-job () activate)
+;;   "Fix a problem with killing the tex job if bash is used as a shell on w32."
+;;   ;; The original (quit-process proc t) in tex-mode.el does not seem to work
+;;   ;; when bash is used as a shell on w32.  Try to use kill-process if the tex
+;;   ;; process is still active after the original function returns.
+;;   (tex-start-shell))
+
+;; (defadvice tex-shell-running (before thf-tex-shell-running () activate)
+;;   (let ((proc (get-process "tex-shell")))
+;;     (when proc
+;;       (if (and (eq (process-status proc) 'run)
+;;                (buffer-live-p (process-buffer proc)))
+;; 	  ;; get rid of the process permanently
+;; 	  ;; this should get rid of the annoying w32 problem with
+;; 	  ;; dead tex-shell buffer and live process
+;; 	  (print "Foo 1")
+;; 	  (kill-process proc 'lambda)
+;; 	  (print "Foo 2")
+;; 	  (delete-process proc)
+;; 	  (print "Foo 3")
+;; 	  (tex-start-shell)))))
+
+(defun thf-latex-mode-hook ()
+  (setq tex-command "pdflatex"
+	tex-dvi-view-command "/opt/Adobe/Reader9/bin//acroread"
+	tex-dvi-file-extension ".pdf"
+	indent-tabs-mode nil)
+  (define-key tex-mode-map "\C-c\C-b" 'tex-bibtex-file)
+  (define-key tex-mode-map "\C-c\C-k" 'thf-tex-kill-job)
+  (define-key tex-mode-map "\M-a" 'latex-insert-a-uml) ; Handle German Umlaut characters in LaTeX mode.
+  (define-key tex-mode-map "\M-A" 'latex-insert-big-a-uml)
+  (define-key tex-mode-map "\M-o" 'latex-insert-o-uml)
+  (define-key tex-mode-map "\M-O" 'latex-insert-big-o-uml)
+  (define-key tex-mode-map "\M-u" 'latex-insert-u-uml)
+  (define-key tex-mode-map "\M-U" 'latex-insert-big-u-uml)
+  (define-key tex-mode-map "\M-s" 'latex-insert-s-uml)
+  (define-key tex-mode-map "\C-\M-u" 'upcase-word) ; Reposition word up/downcase.
+  (define-key tex-mode-map "\C-\M-l" 'downcase-word)
+  (turn-on-font-lock)
+  (setq fill-column 80)
+  (auto-fill-mode 1)) ; Turn on automatic line wrapping.
+
+(defun thf-perl-mode-hook ()
+  (setq perl-indent-level 5
+	perl-continued-statement-offset 5
+	perl-continued-brace-offset 0
+	perl-brace-offset -5
+	perl-brace-imaginary-offset 0
+	perl-label-offset -5)
+  (auto-fill-mode nil)
+  (turn-on-font-lock))
+
+(defun thf-mail-mode-hook ()
+  (setq mail-archive-file-name (concat "~/MAIL/SENT-ARCHIVE/SENT-" (format-time-string "%Y-%b")))
+  (make-variable-buffer-local 'fill-column)
+  (setq fill-column 72) ; Always wrap lines at 72 characters in mail mode.
+  (auto-fill-mode 1)) ; Turn on automatic line wrapping.
+
+(defun thf-sgml-mode-hook ()
+  (setq sgml-omittag nil
+	sgml-always-quote-attributes t
+	sgml-minimize-attributes 'max
+	sgml-indent-step 2
+	sgml-indent-data t
+	sgml-set-face t
+	sgml-markup-faces '((comment . font-lock-comment-face)
+			    (doctype . font-lock-builtin-face)
+			    (start-tag . font-lock-keyword-face)
+			    (end-tag . font-lock-keyword-face)
+			    (pi . font-lock-warning-face)
+			    (entity . font-lock-builtin-face))
+	sgml-xml-declaration "/usr/share/sgml/declaration/xml.dcl"
+	sgml-recompile-out-of-date-cdtd t
+	sgml-auto-activate-dtd t
+	sgml-namecase-general t
+	sgml-general-insert-case "upper"
+	fill-column 110
+	auto-fill-mode 1)
+  (define-key sgml-mode-map "\M-a" 'html-insert-a-uml) ; Handle German Umlaut characters in LaTeX mode.
+  (define-key sgml-mode-map "\M-A" 'html-insert-big-a-uml)
+  (define-key sgml-mode-map "\M-o" 'html-insert-o-uml)
+  (define-key sgml-mode-map "\M-O" 'html-insert-big-o-uml)
+  (define-key sgml-mode-map "\M-u" 'html-insert-u-uml)
+  (define-key sgml-mode-map "\M-U" 'html-insert-big-u-uml)
+  (define-key sgml-mode-map "\M-s" 'html-insert-s-uml)
+  (define-key sgml-mode-map "\C-\M-u" 'upcase-word) ; Reposition word up/downcase.
+  (define-key sgml-mode-map "\C-\M-l" 'downcase-word)
+  (define-key sgml-mode-map "\C-c\C-f" 'sgml-validate)
+)
+
+(defun thf-ido-setup-hook ()
+  (define-key ido-file-dir-completion-map (kbd "<up>")
+    'ido-prev-work-file)
+  (define-key ido-file-dir-completion-map (kbd "<down>")
+    'ido-next-work-file))
+
+;; Now add all the custom hooks to the appropriate variables.
+(add-hook 'c-mode-common-hook 'thf-c-mode-common-hook)
+(add-hook 'c-mode-common-hook (function cscope:hook))
+(add-hook 'java-mode-hook 'thf-java-mode-hook)
+(add-hook 'shell-mode-hook 'thf-shell-mode-hook)
+(add-hook 'emacs-lisp-mode-hook 'thf-emacs-lisp-mode-hook)
+(add-hook 'dired-mode-hook 'thf-dired-mode-hook)
+(add-hook 'latex-mode-hook 'thf-latex-mode-hook)
+(add-hook 'perl-mode-hook 'thf-perl-mode-hook)
+(add-hook 'mail-mode-hook 'thf-mail-mode-hook)
+(add-hook 'sgml-mode-hook 'thf-sgml-mode-hook)
+(add-hook 'comint-output-filter-functions 'comint-strip-ctrl-m)
+(add-hook 'comint-input-filter-functions 'comint-kill-completions)
+(add-hook 'ido-setup-hook 'thf-ido-setup-hook)
+
+(add-hook 'org-mode-hook 'turn-on-font-lock)  ; Org buffers only
+
+;; Setup the completion of mail addresses.
+(add-hook 'mail-setup-hook 'mail-abbrevs-setup)
+(add-hook 'mail-setup-hook
+	  '(lambda ()
+	     (substitute-key-definition 'next-line 'mail-abbrev-next-line mail-mode-map global-map)
+	     (substitute-key-definition 'end-of-buffer 'mail-abbrev-end-of-buffer mail-mode-map global-map)))
+
+;; Finally, do some repair work to the auto-mode-alist.
+(require 'cl)
+(setq auto-mode-alist (append '(("\\.sgml$" . sgml-mode)
+	  ("\\.html$" . html-mode)
+	  ("\\.htm$"  . html-mode)
+	  ("\\.xml$"  . nxml-mode)
+	  ("\\.xsd$"  . nxml-mode)
+	  ("\\.rb$" . ruby-mode)
+	  ("\\.sqc" . c++-mode)
+	  ("\\.h" . c++-mode)
+	  ("\\.gp" . gnuplot-mode)
+	  ("\\.plt" . gnuplot-mode))
+	(delete* 'sgml-mode auto-mode-alist :key 'cdr)))
+
+(setenv "SHELL" shell-file-name)
+
+;;; Enable some useful commands that used to be available per default.
+(put 'narrow-to-region 'disabled nil)
